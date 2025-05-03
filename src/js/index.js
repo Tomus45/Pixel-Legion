@@ -23,7 +23,12 @@ import resources from "./resources.js";
 export default function onload() {
 
     // initialize the display canvas once the device/browser is ready
-    if (!me.video.init(800, 600, {parent : "screen", scaleMethod : "flex-width",  renderer : me.video.WEBGL, preferWebGL1 : false, depthTest: "z-buffer", subPixel : false})) {
+    if (!me.video.init(1920, 1080, {
+        parent: "screen",
+        scaleMethod: "fit", // ou "flex-width", selon le comportement souhaité
+        renderer: me.video.AUTO,
+      }))
+       {
         alert("Your browser does not support HTML5 canvas.");
         return;
     }

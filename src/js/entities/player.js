@@ -25,12 +25,8 @@ class PlayerUnit extends me.Entity {
 
         // set as default
         this.renderable.setCurrentAnimation("stand");
-        // set the viewport to follow this renderable on both axis, and enable damping
-        // me.game.viewport.follow(this, me.game.viewport.AXIS.BOTH, 0.1);
-        // set the viewport fix position
-        me.game.viewport.centerOn(0, 800);
 
-        this.anchorPoint.set(0.5, 1.0); // Ancre le joueur au bas de l'image
+        // this.anchorPoint.set(0.5, 1.0); // Ancre le joueur au bas de l'image
 
         // Variable pour suivre si le joueur est sélectionné
         this.isSelected = false;
