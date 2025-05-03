@@ -1,54 +1,51 @@
-{
-    "compressionlevel": -1,
-    "height": 30,
-    "infinite": false,
-    "layers": [
+{ "compressionlevel":-1,
+ "height":30,
+ "infinite":false,
+ "layers":[
         {
-            "id": 6,
-            "image": "../img/background.png",
-            "imageheight": 2715,
-            "imagewidth": 1920,
-            "name": "background",
-            "opacity": 1,
-            "type": "imagelayer",
-            "visible": true,
-            "x": 0,
-            "y": 0
-        },
+         "id":6,
+         "image":"..\/img\/background.png",
+         "imageheight":1588,
+         "imagewidth":1920,
+         "name":"background",
+         "opacity":1,
+         "type":"imagelayer",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
         {
-            "color": "#00ff00",
-            "draworder": "topdown",
-            "id": 5,
-            "name": "Player",
-            "objects": [
+         "color":"#00ff00",
+         "draworder":"topdown",
+         "id":5,
+         "name":"Player",
+         "objects":[
                 {
-                    "height": 88,
-                    "id": 16,
-                    "name": "mainPlayer",
-                    "rotation": 0,
-                    "type": "",
-                    "visible": true,
-                    "width": 35,
-                    "x": 251,
-                    "y": 893
-                }
-            ],
-            "opacity": 1,
-            "type": "objectgroup",
-            "visible": true,
-            "x": 0,
-            "y": 0
-        }
-    ],
-    "nextlayerid": 12,
-    "nextobjectid": 36,
-    "orientation": "orthogonal",
-    "renderorder": "right-down",
-    "tiledversion": "1.8.5",
-    "tileheight": 35,
-    "tilesets": [],
-    "tilewidth": 35,
-    "type": "map",
-    "version": "1.8",
-    "width": 54
+                 "height":88,
+                 "id":16,
+                 "name":"mainPlayer",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":251,
+                 "y":893
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }],
+ "nextlayerid":12,
+ "nextobjectid":36,
+ "orientation":"orthogonal",
+ "renderorder":"right-down",
+ "tiledversion":"1.11.2",
+ "tileheight":35,
+ "tilesets":[],
+ "tilewidth":35,
+ "type":"map",
+ "version":"1.10",
+ "width":54
 }
