@@ -11,6 +11,14 @@
   <body>
       <!-- Canvas placeholder -->
       <div id="screen"></div>
-      <script type="module" src="src/index.js"></script>
+  <script type="module">
+      import { device, Container } from "melonjs";
+      import onload from "./src/js/index.js";
+
+      device.onReady(() => {
+          device.pauseOnBlur = false;
+          onload();
+      });
+  </script>
   </body>
 </html>
