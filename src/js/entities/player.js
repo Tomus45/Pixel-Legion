@@ -75,9 +75,6 @@ class PlayerUnit extends me.Entity {
                         "selectable",
                         true
                     );
-                    candidates.forEach((entity) => {
-                        entity.unselect(); // Appelle la méthode unselect de chaque entité
-                    });
                     // on cherche celui dont la box contient le clic
                     const clicked = candidates.find((entity) => {
                         const b = entity.getBoundsPixel();
@@ -88,8 +85,11 @@ class PlayerUnit extends me.Entity {
                             y <= b.maxY
                         );
                     });
-
+                    
                     if (clicked) {
+                        candidates.forEach((entity) => {
+                            entity.unselect(); // Appelle la méthode unselect de chaque entité
+                        });
                         clicked.select(); // Appelle la méthode select de l'entité cliquée
                         this.selectedEntity = clicked;
                     } else if (this.selectedEntity) {
@@ -100,6 +100,13 @@ class PlayerUnit extends me.Entity {
                         };
                     }
                 } else if (event.button === 2) {
+                    const candidates = me.game.world.getChildByProp(
+                        "selectable",
+                        true
+                    );
+                    candidates.forEach((entity) => {
+                        entity.unselect(); // Appelle la méthode unselect de chaque entité
+                    });
                     this.selectedEntity = null;
                 }
             }
