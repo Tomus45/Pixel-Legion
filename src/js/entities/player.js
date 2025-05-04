@@ -41,7 +41,7 @@ class PlayerUnit extends me.Entity {
         const halfW = this.renderable.width * this.anchorPoint.x;
         const halfH = this.renderable.height * this.anchorPoint.y;
 
-        this.getWorldBounds = function () {
+        this.getBoundsPixel = function () {
             return {
                 minX: this.pos.x,
                 minY: this.pos.y,
@@ -77,7 +77,8 @@ class PlayerUnit extends me.Entity {
                     );
                     // on cherche celui dont la box contient le clic
                     const clicked = candidates.find((entity) => {
-                        const b = entity.getWorldBounds();
+                        const b = entity.getBoundsPixel();
+                        console.log(b);
                         return (
                             x >= b.minX &&
                             x <= b.maxX &&
@@ -87,6 +88,7 @@ class PlayerUnit extends me.Entity {
                     });
 
                     if (clicked) {
+                        clicked.select(); // Appelle la méthode select de l'entité cliquée
                         this.selectedEntity = clicked;
                         console.log("Selected entity:", clicked);
                     } else if (this.selectedEntity) {
