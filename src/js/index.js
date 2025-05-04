@@ -28,6 +28,8 @@ export default function onload() {
             parent: "screen",
             scaleMethod: "fit", // ou "flex-width", selon le comportement souhaité
             renderer: me.video.CANVAS,
+            antialias: false,           // ← désactive l’anticrénelage
+            subPixel: false,
         })
     ) {
         alert("Your browser does not support HTML5 canvas.");

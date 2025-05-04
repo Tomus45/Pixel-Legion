@@ -1,8 +1,7 @@
-// entities/pixel-group.js
 import * as me from "melonjs";
 
 class PixelGroup extends me.Container {
-    constructor(x, y, pixelCount = 10) {
+    constructor(x, y, pixelCount = 10, padding = 32) {
         super(x, y, {
             width: 0,
             height: 0,
@@ -11,6 +10,9 @@ class PixelGroup extends me.Container {
         this.spawnX = x;
         this.spawnY = y;
         this.selectable = true;
+
+        // Padding autour du hull
+        this.padding = padding;
 
         // Génère les pixels (positions LOCALES dans le container)
         for (let i = 0; i < this.pixelCount; i++) {
@@ -25,8 +27,12 @@ class PixelGroup extends me.Container {
         this.body.gravityScale = 0;
         this.body.collisionType = me.collision.types.NO_OBJECT;
 
+        // Cacher le canvas et le contexte 2D une seule fois
         this._canvas = me.video.renderer.getCanvas();
         this._ctx = this._canvas.getContext("2d");
+
+        // Initialiser le hull
+        this._expandedHull = null;
     }
 
     /**
@@ -68,9 +74,10 @@ class PixelGroup extends me.Container {
     draw(renderer) {
         const ctx = this._ctx;
         if (this._expandedHull) {
+            // remplissage semi-transparent
             ctx.save();
             ctx.globalAlpha = 0.2;
-            ctx.fillStyle = "#000";
+            ctx.fillStyle = "#FFF";
             ctx.beginPath();
             ctx.moveTo(this._expandedHull[0].x, this._expandedHull[0].y);
             for (let p of this._expandedHull) {
@@ -79,9 +86,16 @@ class PixelGroup extends me.Container {
             ctx.closePath();
             ctx.fill();
 
-            ctx.globalAlpha = 1;
-            ctx.strokeStyle = "#f00";
-            ctx.lineWidth = 2;
+            // outline
+            ctx.translate(0.5, 0.5);
+
+            // coins et extrémités « ronds » pour limiter l’effet d’aliasing
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 5;
             ctx.beginPath();
             ctx.moveTo(this._expandedHull[0].x, this._expandedHull[0].y);
             for (let p of this._expandedHull) {
@@ -91,6 +105,7 @@ class PixelGroup extends me.Container {
             ctx.stroke();
             ctx.restore();
         }
+
         super.draw(renderer);
     }
 
@@ -113,7 +128,7 @@ class PixelGroup extends me.Container {
             }
         });
 
-        // 1) calculez worldPoints seulement si besoin
+        // 1) calculer les positions MONDIALES des pixels
         const pts = this.children.map((c) => ({
             x: this.pos.x + c.pos.x,
             y: this.pos.y + c.pos.y,
@@ -122,18 +137,21 @@ class PixelGroup extends me.Container {
         // 2) enveloppe convexe
         const hull = this._convexHull(pts);
 
-        // 3) expansion du hull pour le padding (5px ici)
+        // 3) expansion du hull pour le padding
         const centroid = hull.reduce(
-            (a, p) => ((a.x += p.x), (a.y += p.y), a),
+            (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
             { x: 0, y: 0 }
         );
         centroid.x /= hull.length;
         centroid.y /= hull.length;
         this._expandedHull = hull.map((p) => {
-            const dx = p.x - centroid.x,
-                dy = p.y - centroid.y;
-            const d = Math.hypot(dx, dy) || 1;
-            return { x: p.x + (dx / d) * 5, y: p.y + (dy / d) * 5 };
+            const dxp = p.x - centroid.x;
+            const dyp = p.y - centroid.y;
+            const dist = Math.hypot(dxp, dyp) || 1;
+            return {
+                x: Math.round(p.x + (dxp / dist) * this.padding),
+                y: Math.round(p.y + (dyp / dist) * this.padding),
+            };
         });
 
         return super.update(dt);
