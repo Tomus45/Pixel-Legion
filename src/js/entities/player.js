@@ -75,10 +75,12 @@ class PlayerUnit extends me.Entity {
                         "selectable",
                         true
                     );
+                    candidates.forEach((entity) => {
+                        entity.unselect(); // Appelle la méthode unselect de chaque entité
+                    });
                     // on cherche celui dont la box contient le clic
                     const clicked = candidates.find((entity) => {
                         const b = entity.getBoundsPixel();
-                        console.log(b);
                         return (
                             x >= b.minX &&
                             x <= b.maxX &&
@@ -90,7 +92,6 @@ class PlayerUnit extends me.Entity {
                     if (clicked) {
                         clicked.select(); // Appelle la méthode select de l'entité cliquée
                         this.selectedEntity = clicked;
-                        console.log("Selected entity:", clicked);
                     } else if (this.selectedEntity) {
                         // Déplacer l'entité sélectionnée vers la position cible
                         this.selectedEntity.targetPos = {
@@ -110,25 +111,6 @@ class PlayerUnit extends me.Entity {
 
     update(dt) {
         // Ajoute la logique pour le mouvement ou autres interactions
-        if (this.selectedEntity && this.selectedEntity.targetPos) {
-            const dx =
-                this.selectedEntity.targetPos.x - this.selectedEntity.pos.x;
-            const dy =
-                this.selectedEntity.targetPos.y - this.selectedEntity.pos.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance > 4) {
-                const angle = Math.atan2(dy, dx);
-                this.selectedEntity.body.vel.x =
-                    Math.cos(angle) * this.selectedEntity.body.maxVel.x;
-                this.selectedEntity.body.vel.y =
-                    Math.sin(angle) * this.selectedEntity.body.maxVel.y;
-            } else {
-                this.selectedEntity.body.vel.set(0, 0);
-                this.selectedEntity.targetPos = null;
-            }
-        }
-
         if (this.targetPos) {
             const dx = this.targetPos.x - this.pos.x;
             const dy = this.targetPos.y - this.pos.y;
@@ -169,6 +151,13 @@ class PlayerUnit extends me.Entity {
         return true;
     }
 
+    select() {
+        this.selected = true;
+    }
+
+    unselect() {
+        this.selected = false;
+    }
 }
 
 export default PlayerUnit;
