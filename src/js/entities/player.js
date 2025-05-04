@@ -60,12 +60,41 @@ class PlayerUnit extends me.Entity {
         this.debug.pos.x = this.pos.x - halfW;
         this.debug.pos.y = this.pos.y - halfH;
 
+        this.isDragging = false; // Indique si le clic gauche est maintenu
+
+        // Écouteur pour détecter le clic gauche maintenu
+        me.input.registerPointerEvent(
+            "pointermove",
+            me.game.viewport,
+            (event) => {
+                if (this.isDragging && this.selectedEntity) {
+                    // Met à jour la position cible de l'entité sélectionnée
+                    this.selectedEntity.targetPos = {
+                        x: event.gameWorldX,
+                        y: event.gameWorldY,
+                    };
+                }
+            }
+        );
+
+        // Écouteur pour détecter le relâchement du clic
+        me.input.registerPointerEvent(
+            "pointerup",
+            me.game.viewport,
+            (event) => {
+                if (event.button === 0) {
+                    this.isDragging = false; // Arrête le suivi
+                }
+            }
+        );
+
         // Écouteur de clic
         me.input.registerPointerEvent(
             "pointerdown",
             me.game.viewport,
             (event) => {
                 if (event.button === 0) {
+                    this.isDragging = true; // Active le suivi
                     // Vérifie si une entité est cliquée
                     const x = event.gameWorldX;
                     const y = event.gameWorldY;

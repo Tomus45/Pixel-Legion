@@ -19,11 +19,15 @@ class PixelGroup extends me.Container {
 
         this.body.setMaxVelocity(3, 3);
 
+        this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length) ;
+        console.log("Pixel move radius:", this.pixelMoveRadius);
+
         for (let i = 0; i < pixelInstance.length; i++) {
             const pixel = me.pool.pull(
                 "pixel",
                 pixelInstance[i].localX,
-                pixelInstance[i].localY
+                pixelInstance[i].localY,
+                this.pixelMoveRadius
             );
             this.addChild(pixel);
         }

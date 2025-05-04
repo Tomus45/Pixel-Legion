@@ -2,7 +2,7 @@
 import * as me from "melonjs";
 
 class Pixel extends me.Entity {
-    constructor(x, y) {
+    constructor(x, y, moveRadius = 20) {
         super(x, y, {
             width: 10,
             height: 10,
@@ -14,7 +14,7 @@ class Pixel extends me.Entity {
         this.startY = this.pos.y;
 
         // Rayon dans lequel le pixel va se balader
-        this.moveRadius = 20;
+        this.moveRadius = moveRadius;
 
         // Vitesse maximale en px/frame
         this.moveSpeed = 0.2;
