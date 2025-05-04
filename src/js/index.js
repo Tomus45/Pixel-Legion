@@ -17,6 +17,7 @@ import "../index.css";
 import TitleScreen from "./screens/title.js";
 import PlayScreen from "./screens/play.js";
 import PlayerUnit from './entities/player.js';
+import Pixel from './entities/pixel.js';
 import resources from "./resources.js";
 
 
@@ -55,6 +56,7 @@ export default function onload() {
 
         // add our player entity in the entity pool
         me.pool.register("mainPlayer", PlayerUnit);
+        me.pool.register("pixel", Pixel);
 
         // Start the game.
         me.state.change(me.state.PLAY);

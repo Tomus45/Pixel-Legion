@@ -13,6 +13,12 @@ const resources = [
         type: "image",
         src: "./data/img/character.png"
     },
+
+    {
+        name: "pixel",
+        type: "image",
+        src: "./data/img/pixel.png"
+    },
     
     /* Bitmap Text */
     {

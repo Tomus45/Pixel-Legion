@@ -10,9 +10,14 @@ class PlayerUnit extends me.Entity {
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
 
         // Défini le joueur comme une entité qui peut être déplacée
-        this.body.setMaxVelocity(3, 15);
+        this.body.setMaxVelocity(3, 3); // Vitesse maximale de 3 pixels par frame
         this.body.gravity = 0;
         this.body.gravityScale = 0; // Set gravity scale to 0.5 for a slower fall
+        this.body.setFriction(0.2, 0.2);
+
+
+        this.pixelTimer = 0; // Temps écoulé
+        this.pixelInterval = 1000; // Générer 1 pixel toutes les 500 ms (0.5 seconde)
 
         // set a renderable
         this.renderable = new me.Sprite(0, 0, {
@@ -31,24 +36,17 @@ class PlayerUnit extends me.Entity {
         // Variable pour suivre si le joueur est sélectionné
         this.isSelected = false;
 
-        // Écouteur d'événements pour la sélection du joueur
-        // me.input.bindPointer(me.input.pointer.LEFT, "leftClick", true);
-
         // Écouteur de clic
         me.input.registerPointerEvent(
             "pointerdown",
             me.game.viewport,
             (event) => {
-                console.log("Clic détecté !");
-                const worldX = event.gameLocalX - this.width / 2; // Ajuster la position pour centrer le joueur
-                const worldY = event.gameLocalY - this.height; // Ajuster la position pour centrer le joueur
-                console.log("clic", event);
-
-                this.targetPos = { x: worldX, y: worldY };
+                this.targetPos = {
+                    x: event.gameWorldX,
+                    y: event.gameWorldY
+                };
             }
         );
-
-        // Écouteur d'événements pour le clic gauche de la souris
 
         // Position cible initiale
         this.targetPosition = null;
@@ -68,24 +66,42 @@ class PlayerUnit extends me.Entity {
         if (me.input.isKeyPressed("down")) {
             this.body.vel.y += (this.body.accel.y * dt) / 1000;
         }
+
         if (this.targetPos) {
             const dx = this.targetPos.x - this.pos.x;
             const dy = this.targetPos.y - this.pos.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            // console.log("Distance to target:", distance);
-            console.log("actual position:", this.pos.x, this.pos.y);
-
-            const speed = 5; // pixels/frame
-
-            if (distance > 5) {
-                this.pos.x += (speed * dx) / distance;
-                this.pos.y += (speed * dy) / distance;
+            if (distance > 4) {
+                const angle = Math.atan2(dy, dx);
+                this.body.vel.x = Math.cos(angle) * this.body.maxVel.x;
+                this.body.vel.y = Math.sin(angle) * this.body.maxVel.y;
             } else {
-                this.targetPos = null; // Arrivé
+                this.body.vel.set(0, 0);
+                this.targetPos = null;
             }
         }
 
+        this.pixelTimer += dt;
+
+        if (this.pixelTimer >= this.pixelInterval) {
+            this.pixelTimer = 0;
+        
+            // Générer plusieurs pixels (par exemple, 5 à la fois)
+            for (let i = 0; i < 5; i++) {
+                // Placer les pixels autour du joueur (dans une petite zone)
+                const offsetX = Math.floor(Math.random() * 40) - 20; // horizontalement autour du joueur
+                const offsetY = Math.floor(Math.random() * 50) - 100; // position verticale décalée un peu au-dessus du joueur
+        
+                const pixelX = this.pos.x + offsetX;
+                const pixelY = this.pos.y + offsetY; // S'assure que les pixels sont au-dessus du joueur (ajusté pour ne pas être exactement à la même hauteur)
+        
+                // Générer le pixel et l'ajouter au monde
+                const pixel = me.pool.pull("pixel", pixelX, pixelY);
+                me.game.world.addChild(pixel, 1);
+            }
+        }
+        
         // Appelle la méthode update du parent pour gérer les collisions et autres
         super.update(dt);
         return true;
