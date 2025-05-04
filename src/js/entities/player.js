@@ -150,8 +150,8 @@ class PlayerUnit extends me.Entity {
             // Générer un groupe de pixels
             const pixelGroup = me.pool.pull(
                 "pixelGroup",
-                this.pos.x - 24,
-                this.pos.y,
+                this.pos.x + 16,
+                this.pos.y + 16,
                 5
             ); // 5 pixels dans le groupe
             // Randomize the spawn direction
