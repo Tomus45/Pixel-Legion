@@ -24,6 +24,9 @@ class PixelGroup extends me.Container {
         this.body = new me.Body(this);
         this.body.gravityScale = 0;
         this.body.collisionType = me.collision.types.NO_OBJECT;
+
+        this._canvas = me.video.renderer.getCanvas();
+        this._ctx = this._canvas.getContext("2d");
     }
 
     /**
@@ -31,21 +34,16 @@ class PixelGroup extends me.Container {
      */
     _convexHull(pts) {
         if (pts.length <= 1) return pts.slice();
-        const pts2 = pts.slice().sort((a, b) =>
-            a.x === b.x ? a.y - b.y : a.x - b.x
-        );
+        const pts2 = pts
+            .slice()
+            .sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
         const cross = (o, a, b) =>
-            (a.x - o.x) * (b.y - o.y) -
-            (a.y - o.y) * (b.x - o.x);
+            (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
         const lower = [];
         for (const p of pts2) {
             while (
                 lower.length >= 2 &&
-                cross(
-                    lower[lower.length - 2],
-                    lower[lower.length - 1],
-                    p
-                ) <= 0
+                cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0
             ) {
                 lower.pop();
             }
@@ -56,11 +54,7 @@ class PixelGroup extends me.Container {
             const p = pts2[i];
             while (
                 upper.length >= 2 &&
-                cross(
-                    upper[upper.length - 2],
-                    upper[upper.length - 1],
-                    p
-                ) <= 0
+                cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0
             ) {
                 upper.pop();
             }
@@ -72,39 +66,35 @@ class PixelGroup extends me.Container {
     }
 
     draw(renderer) {
-        // 1) on récupère directement le contexte Canvas 2D
-        const ctx = me.video.renderer.getContext();
-
-        // 2) on construit la liste des positions MONDIALES de chaque pixel
-        const worldPoints = this.children.map((child) => ({
-            x: this.pos.x + child.pos.x,
-            y: this.pos.y + child.pos.y,
-        }));
-
-        if (worldPoints.length > 2) {
-            // 3) calcul du convex hull
-            const hull = this._convexHull(worldPoints);
-
-            // 4) dessin du fond semi-transparent
+        const ctx = this._ctx;
+        if (this._expandedHull) {
             ctx.save();
-            ctx.globalAlpha = 0.5;
-            ctx.fillStyle = "#FFFFFF";
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = "#000";
             ctx.beginPath();
-            ctx.moveTo(hull[0].x, hull[0].y);
-            for (let i = 1; i < hull.length; i++) {
-                ctx.lineTo(hull[i].x, hull[i].y);
+            ctx.moveTo(this._expandedHull[0].x, this._expandedHull[0].y);
+            for (let p of this._expandedHull) {
+                ctx.lineTo(p.x, p.y);
             }
             ctx.closePath();
             ctx.fill();
+
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = "#f00";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this._expandedHull[0].x, this._expandedHull[0].y);
+            for (let p of this._expandedHull) {
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.stroke();
             ctx.restore();
         }
-
-        // 5) on dessine enfin les pixels par-dessus
         super.draw(renderer);
     }
 
     update(dt) {
-        
         // Constrain the group within a 50px radius from its spawn position
         const dx = this.pos.x - this.spawnX;
         const dy = this.pos.y - this.spawnY;
@@ -123,7 +113,28 @@ class PixelGroup extends me.Container {
             }
         });
 
+        // 1) calculez worldPoints seulement si besoin
+        const pts = this.children.map((c) => ({
+            x: this.pos.x + c.pos.x,
+            y: this.pos.y + c.pos.y,
+        }));
 
+        // 2) enveloppe convexe
+        const hull = this._convexHull(pts);
+
+        // 3) expansion du hull pour le padding (5px ici)
+        const centroid = hull.reduce(
+            (a, p) => ((a.x += p.x), (a.y += p.y), a),
+            { x: 0, y: 0 }
+        );
+        centroid.x /= hull.length;
+        centroid.y /= hull.length;
+        this._expandedHull = hull.map((p) => {
+            const dx = p.x - centroid.x,
+                dy = p.y - centroid.y;
+            const d = Math.hypot(dx, dy) || 1;
+            return { x: p.x + (dx / d) * 5, y: p.y + (dy / d) * 5 };
+        });
 
         return super.update(dt);
     }
