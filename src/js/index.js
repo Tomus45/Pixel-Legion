@@ -37,10 +37,6 @@ export default function onload() {
     }
 
     const ctx = me.video.renderer.getCanvas();
-    console.log(ctx);
-    ctx.get
-    // const ctx = canvas.getContext("2d");
-    // console.log(ctx);
 
     // Disable right-click context menu on the game canvas
     document
