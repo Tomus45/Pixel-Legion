@@ -9,13 +9,13 @@
          "name":"Player",
          "objects":[
                 {
-                 "height":88,
+                 "height":20,
                  "id":16,
                  "name":"mainPlayer",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":35,
+                 "width":20,
                  "x":875,
                  "y":945
                 }],
