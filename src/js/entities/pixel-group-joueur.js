@@ -1,22 +1,19 @@
 import * as me from "melonjs";
 
-class PixelGroup extends me.Container {
+class PixelGroupJoueur extends me.Container {
     constructor(x, y, pixelCount = 10, padding = 32, pixelInstance = []) {
         super(x, y, {
             width: 8,
             height: 8,
         });
         this.pixelCount = pixelCount;
-        this.spawnX = x;
-        this.spawnY = y;
         this.selectable = true;
         this.selected = false;
         this.hovered = false;
         this.padding = padding;
-        this.type = "pixelGroup";
+        this.type = "auraPixelGroup";
 
         this.body = new me.Body(this);
-        this.body.setMaxVelocity(3, 3);
 
         this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length);
 
@@ -37,10 +34,9 @@ class PixelGroup extends me.Container {
             this.addChild(pixel);
         }
 
-        this.body.gravityScale = 0;
         this.body.collisionType = me.collision.types.NO_OBJECT;
 
-        this._expandedHull = null;
+        // this._expandedHull = null;
         this.initialMovementConstrained = true;
 
         me.input.registerPointerEvent(
@@ -64,21 +60,6 @@ class PixelGroup extends me.Container {
                 }
             }
         );
-
-        this._mouseMoveHandler = (event) => {
-            const bounds = this.getBoundsPixel();
-            const x = event.gameWorldX;
-            const y = event.gameWorldY;
-        
-            this.hovered =
-                x >= bounds.minX &&
-                x <= bounds.maxX &&
-                y >= bounds.minY &&
-                y <= bounds.maxY;
-        };
-        
-        me.input.registerPointerEvent("pointermove", me.game.viewport, this._mouseMoveHandler);
-        
     }
 
     // Function to calculate convex hull
@@ -133,7 +114,7 @@ class PixelGroup extends me.Container {
             renderer.save();
     
             renderer.setGlobalAlpha(0.5);
-            renderer.setColor("#ff0000");
+            renderer.setColor("#FFF");
 
             // Dessiner le hull
             renderer.beginPath();
@@ -146,7 +127,7 @@ class PixelGroup extends me.Container {
 
             // Dessiner les contours du hull
             renderer.setGlobalAlpha(1.0);
-            renderer.setColor(this.selected ? "#ff0000" : defaultHullColor);
+            renderer.setColor(this.selected ? "#ffffff" : defaultHullColor);
             renderer.lineWidth = 5;
             renderer.beginPath();
             renderer.moveTo(this._expandedHull[0].x, this._expandedHull[0].y);
@@ -161,18 +142,16 @@ class PixelGroup extends me.Container {
         super.draw(renderer);
     }
 
-    update(dt) {
-        // Constrain movement of pixel group initially
-        if (this.initialMovementConstrained) {
-            const dx = this.pos.x - this.spawnX;
-            const dy = this.pos.y - this.spawnY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+    setOwner(owner) {
+        this.owner = owner;
+    }
 
-            if (distance > 50) {
-                this.body.vel.x = 0;
-                this.body.vel.y = 0;
-                this.initialMovementConstrained = false;
-            }
+    update(dt) {
+
+        // Si un propriétaire est défini, synchroniser la position avec lui
+        if (this.owner) {
+            this.pos.x = this.owner.pos.x;
+            this.pos.y = this.owner.pos.y;
         }
 
         // Update each pixel in the group
@@ -183,7 +162,6 @@ class PixelGroup extends me.Container {
         });
 
         // Handle selection of pixels
-
             const pts = this.children.map((c) => ({
                 x: this.pos.x + c.pos.x,
                 y: this.pos.y + c.pos.y,
@@ -208,135 +186,16 @@ class PixelGroup extends me.Container {
                 };
             });
 
-         // détection de fusion
-         const seuilFusion = 50; // en pixels, à ajuster
-         if (!this._alreadyMerged) {
-             me.game.world.children
-             .filter((obj) => obj instanceof PixelGroup && obj !== this)
-             .forEach((other) => {
-                 if (
-                 !other._alreadyMerged &&
-                 Math.hypot(
-                     this.pos.x - other.pos.x,
-                     this.pos.y - other.pos.y
-                 ) < seuilFusion &&
-                 this.body.vel.x === 0 &&
-                 this.body.vel.y === 0 &&
-                 other.body.vel.x === 0 &&
-                 other.body.vel.y === 0 &&
-                 this.children.length === other.children.length
-                 ) {
-                 // on fusionne en créant un nouveau groupe
-                 this.mergeIntoNewGroup(this, other);
-                 this._alreadyMerged = true;
-                 other._alreadyMerged = true;
-                 }
-             });
-         }
- 
-         if (this.targetPos) {
-             const dx = this.targetPos.x - this.pos.x;
-             const dy = this.targetPos.y - this.pos.y;
-             const distance = Math.sqrt(dx * dx + dy * dy);
- 
-             if (distance > 4) {
-                 const angle = Math.atan2(dy, dx);
-                 this.body.vel.x = Math.cos(angle) * this.body.maxVel.x;
-                 this.body.vel.y = Math.sin(angle) * this.body.maxVel.y;
-             } else {
-                 this.body.vel.set(0, 0);
-                 this.targetPos = null;
-             }
-         }
+        // Désactiver la logique de déplacement indépendante
+        this.body.vel.set(0, 0);
+        this.targetPos = null;
 
         super.update(dt);
     }
 
-    mergeIntoNewGroup(groupA, groupB) {
-        if (!groupA || !groupB) {
-            console.warn("Invalid groups provided for merging:", groupA, groupB);
-            return null;
-        }
-    
-        // 1) Récupérer tous les pixels (instances) et leur position MONDIALE
-        const allPixels = [];
-        [groupA, groupB].forEach((grp) => {
-            grp.children.slice().forEach((child) => {
-                if (child && child.pos && typeof child.pos.x === "number" && typeof child.pos.y === "number") {
-                    allPixels.push({
-                        instance: child,
-                        worldX: grp.pos.x + child.pos.x,
-                        worldY: grp.pos.y + child.pos.y,
-                        localX: child.pos.x,
-                        localY: child.pos.y,
-                    });
-                    grp.removeChild(child); // Supprimer l'enfant de l'ancien groupe
-                } else {
-                    console.warn("Invalid child encountered during merge:", child);
-                }
-            });
-        });
-        console.log("All pixels transferred to new group:", allPixels);
-        if (allPixels.length === 0) {
-            console.warn("No valid pixels found for merging.");
-            return null;
-        }
-    
-        // 2) Calculer le nouveau point de spawn (centre de gravité des pixels)
-        const centroid = allPixels.reduce(
-            (acc, p) => {
-                acc.x += p.worldX;
-                acc.y += p.worldY;
-                return acc;
-            },
-            { x: 0, y: 0 }
-        );
-        centroid.x /= allPixels.length;
-        centroid.y /= allPixels.length;
-    
-        // 3) Créer un nouveau groupe avec les pixels fusionnés
-        const padding = Math.max(groupA.padding, groupB.padding);
-        const newGroup = new PixelGroup(
-            centroid.x,
-            centroid.y,
-            0,
-            padding,
-            allPixels
-        );
-    
-        // 4) Ajouter le nouveau groupe et supprimer les anciens
-        const world = me.game.world;
-        try {
-            world.removeChild(groupA);
-            world.removeChild(groupB);
-            world.addChild(newGroup);
-        } catch (error) {
-            console.error("Error during group removal or addition:", error);
-        }
-    
-        return newGroup;
-    }
-
-    onDestroyEvent() {
-        this.children.slice().forEach((child) => {
-            if (child && child.destroy) {
-                child.destroy();
-            }
-            this.removeChild(child);
-        });
-    
-        if (this._mouseMoveHandler) {
-            me.input.releasePointerEvent("pointermove", me.game.viewport, this._mouseMoveHandler);
-            this._mouseMoveHandler = null;
-        }
-    }
-    
-
     getBoundsPixel() {
         // 1) on récupère les points mondiaux de tous les pixels
-        const pts = this.children
-        .filter((c) => c && c.pos && typeof c.pos.x === "number" && typeof c.pos.y === "number") // Filtrer les enfants valides
-        .map((c) => ({
+        const pts = this.children.map((c) => ({
             x: this.pos.x + c.pos.x,
             y: this.pos.y + c.pos.y,
         }));
@@ -387,10 +246,6 @@ class PixelGroup extends me.Container {
         };
     }
 
-    setTarget(pos) {
-        this.targetPos = { x: pos.x, y: pos.y };
-    }
-
     select() {
         this.selected = true;
     }
@@ -400,4 +255,4 @@ class PixelGroup extends me.Container {
     }
 }
 
-export default PixelGroup;
+export default PixelGroupJoueur;

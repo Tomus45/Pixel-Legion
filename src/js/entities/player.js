@@ -1,109 +1,103 @@
 import * as me from "melonjs";
+import PixelGroup from "./pixel-group.js";
 import game from "./../game.js";
-import PixelGroup from "./pixel-group";
 
 class PlayerUnit extends me.Entity {
     constructor(x, y, settings) {
-        // Appeler le constructeur parent
         super(x, y, settings);
 
+        this.type = "player";
         this.selectable = true;
 
         // set a "player object" type
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
 
-        // Défini le joueur comme une entité qui peut être déplacée
         this.body.setMaxVelocity(3, 3); // Vitesse maximale de 3 pixels par frame
         this.body.gravityScale = 0; // Set gravity scale to 0.5 for a slower fall
         this.body.setFriction(0.2, 0.2);
 
         this.pixelTimer = 0; // Temps écoulé
-        this.pixelInterval = 2000; // Générer un group de pixels toutes les 5000 ms (5 seconde)
+        this.pixelInterval = 2000; // Générer un group de pixels toutes les 2000 ms
 
-        // set a renderable
+        // Créer la barre de vie (auraPixelGroup) et la lier au joueur
+        this.auraPixelGroup = me.pool.pull("pixelGroupJoueur", this.pos.x, this.pos.y, 10, 32);
+        this.auraPixelGroup.setOwner(this); // On lie le groupe de pixels au joueur
+        me.game.world.addChild(this.auraPixelGroup, this.z);
+
+
+
         this.renderable = new me.Sprite(0, 0, {
             image: me.loader.getImage("character"),
-            framewidth: 32, // Set the frame width of the sprite
-            frameheight: 32, // Set the frame height of the sprite
+            framewidth: 32,
+            frameheight: 32,
         });
 
         this.renderable.addAnimation("stand", [0], 100);
-
-        // set as default
         this.renderable.setCurrentAnimation("stand");
 
         this.anchorPoint.set(1, 1);
 
-        // Variable pour suivre si le joueur est sélectionné
         this.selectedEntity = null; // Aucune entité sélectionnée par défaut
 
-        // calculer la bounding box world de l’entité
+        // Bounding box pour la sélection
         const halfW = this.renderable.width * this.anchorPoint.x;
         const halfH = this.renderable.height * this.anchorPoint.y;
+        // this.getBoundsPixel = function () {
+        //     return {
+        //         minX: this.pos.x,
+        //         minY: this.pos.y,
+        //         maxX: this.pos.x + halfW + 4,
+        //         maxY: this.pos.y + halfH + 4,
+        //     };
+        // };
 
-        this.getBoundsPixel = function () {
-            return {
-                minX: this.pos.x,
-                minY: this.pos.y,
-                maxX: this.pos.x + halfW + 4,
-                maxY: this.pos.y + halfH + 4,
-            };
-        };
-
-        // trace la bounding box de l’entité
-        this.debug = new me.Rect(
-            0,
-            0,
-            this.renderable.width,
-            this.renderable.height
-        );
+        this.debug = new me.Rect(0, 0, this.renderable.width, this.renderable.height);
         this.debug.pos.x = this.pos.x - halfW;
         this.debug.pos.y = this.pos.y - halfH;
 
-        this.isDragging = false; // Indique si le clic gauche est maintenu
+        this.isDragging = false;
 
-        // Écouteur pour détecter le clic gauche maintenu
+        // Détection de l'input pour le mouvement de l'entité
         me.input.registerPointerEvent(
             "pointermove",
             me.game.viewport,
             (event) => {
-                if (this.isDragging && this.selectedEntity) {
-                    // Met à jour la position cible de l'entité sélectionnée
-                    this.selectedEntity.targetPos = {
-                        x: event.gameWorldX,
-                        y: event.gameWorldY,
-                    };
+                if (this.isDragging) {
+                    if(this.selectedEntity.type !== "player" && this.selectedEntity.type !== "auraPixelGroup") {
+                        this.selectedEntity.targetPos ={
+                            x: event.gameWorldX,
+                            y: event.gameWorldY,
+                        };   
+                    } else {
+                        this.targetPos = {
+                            x: event.gameWorldX,
+                            y: event.gameWorldY,
+                        };
+                    }            
                 }
             }
         );
 
-        // Écouteur pour détecter le relâchement du clic
         me.input.registerPointerEvent(
             "pointerup",
             me.game.viewport,
             (event) => {
                 if (event.button === 0) {
-                    this.isDragging = false; // Arrête le suivi
+                    this.isDragging = false;
                 }
             }
         );
 
-        // Écouteur de clic
         me.input.registerPointerEvent(
             "pointerdown",
             me.game.viewport,
             (event) => {
-                if (event.button === 0) {
-                    this.isDragging = true; // Active le suivi
-                    // Vérifie si une entité est cliquée
+                if (event.button === 0) { // Si le bouton gauche de la souris est pressé
                     const x = event.gameWorldX;
                     const y = event.gameWorldY;
-
-                    // on récupère tous les 'selectable'…
-                    const candidates = me.game.world.getChildByProp(
-                        "selectable",
-                        true
-                    );
+        
+                    // Vérifier si un PixelGroup a été sélectionné
+                    const candidates = me.game.world.getChildByProp("selectable", true);
                     // on cherche celui dont la box contient le clic
                     const clicked = candidates.find((entity) => {
                         const b = entity.getBoundsPixel();
@@ -114,39 +108,41 @@ class PlayerUnit extends me.Entity {
                             y <= b.maxY
                         );
                     });
-                    
+                    console.log("clicked", clicked);
+        
                     if (clicked) {
+                        // Si un PixelGroup est sélectionné
                         candidates.forEach((entity) => {
-                            entity.unselect(); // Appelle la méthode unselect de chaque entité
+                            entity.unselect(); // Désélectionner les autres entités
                         });
-                        clicked.select(); // Appelle la méthode select de l'entité cliquée
-                        this.selectedEntity = clicked;
-                    } else if (this.selectedEntity) {
-                        // Déplacer l'entité sélectionnée vers la position cible
-                        this.selectedEntity.targetPos = {
-                            x: event.gameWorldX,
-                            y: event.gameWorldY,
-                        };
+                        clicked.select(); // Sélectionner l'entité
+                        this.selectedEntity = clicked; // Définir la sélection
+        
+                        this.isDragging = true; // Activer le déplacement
+                    } else {
+                        // Si aucun PixelGroup n'est sélectionné, désélectionner le joueur et arrêter le déplacement
+                        if (this.selectedEntity) {
+                            this.selectedEntity.targetPos = {
+                                x: event.gameWorldX,
+                                y: event.gameWorldY,
+                            };
+                        }
                     }
-                } else if (event.button === 2) {
-                    const candidates = me.game.world.getChildByProp(
-                        "selectable",
-                        true
-                    );
+                } else if (event.button === 2) { // Si le bouton droit de la souris est pressé
+                    const candidates = me.game.world.getChildByProp("selectable", true);
                     candidates.forEach((entity) => {
-                        entity.unselect(); // Appelle la méthode unselect de chaque entité
+                        entity.unselect(); // Désélectionner toutes les entités
                     });
-                    this.selectedEntity = null;
+                    this.selectedEntity = null; // Réinitialiser la sélection
                 }
             }
         );
+        
 
-        // Position cible initiale
         this.targetPosition = null;
     }
 
     update(dt) {
-        // Ajoute la logique pour le mouvement ou autres interactions
         if (this.targetPos) {
             const dx = this.targetPos.x - this.pos.x;
             const dy = this.targetPos.y - this.pos.y;
@@ -164,25 +160,20 @@ class PlayerUnit extends me.Entity {
 
         this.pixelTimer += dt;
 
+        // Génération des pixels volants
         if (this.pixelTimer >= this.pixelInterval) {
             this.pixelTimer = 0;
 
-            // Générer un groupe de pixels
-            const pixelGroup = me.pool.pull(
-                "pixelGroup",
-                this.pos.x + 16,
-                this.pos.y + 16,
-                5
-            ); // 5 pixels dans le groupe
-            // Randomize the spawn direction
-            // pixelGroup.body.vel.x = (Math.random() - 0.5) * 4; // Random horizontal velocity
-            pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2; // Randomize horizontal velocity slightly
+            const pixelGroup = me.pool.pull("pixelGroup", this.pos.x + 16, this.pos.y + 16, 5);
+
+            // Définir une vitesse aléatoire pour les pixels générés
+            pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;
             pixelGroup.body.vel.y = Math.random() < 0.5 ? -2 : 2;
 
+            // Ajout des pixels à la scène sans interagir avec la barre de vie
             me.game.world.addChild(pixelGroup, 1);
         }
 
-        // Appelle la méthode update du parent pour gérer les collisions et autres
         super.update(dt);
         return true;
     }
