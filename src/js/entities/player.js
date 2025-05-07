@@ -164,7 +164,7 @@ class PlayerUnit extends me.Entity {
         if (this.pixelTimer >= this.pixelInterval) {
             this.pixelTimer = 0;
 
-            const pixelGroup = me.pool.pull("pixelGroup", this.pos.x + 16, this.pos.y + 16, 5);
+            const pixelGroup = me.pool.pull("pixelGroup", this.pos.x, this.pos.y, 10);
 
             // Définir une vitesse aléatoire pour les pixels générés
             pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;

@@ -12,29 +12,35 @@ class PixelGroup extends me.Container {
         this.selectable = true;
         this.selected = false;
         this.hovered = false;
-        this.padding = padding;
-        this.type = "pixelGroup";
+        this.padding = padding; // Padding for the convex hull
+        this.type = "pixelGroup"; 
+        this.maxCount = 100; // Maximum number of pixels in the group
 
         this.body = new me.Body(this);
         this.body.setMaxVelocity(3, 3);
 
-        this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length);
+        this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length); 
 
-        for (let i = 0; i < pixelInstance.length; i++) {
-            const pixel = me.pool.pull(
-                "pixel",
-                pixelInstance[i].localX,
-                pixelInstance[i].localY,
-                this.pixelMoveRadius
-            );
-            this.addChild(pixel);
-        }
-
-        for (let i = 0; i < this.pixelCount; i++) {
-            const offsetX = Math.random() * 50 - 25;
-            const offsetY = Math.random() * 50 - 25;
-            const pixel = me.pool.pull("pixel", offsetX, offsetY);
-            this.addChild(pixel);
+        // Créer les pixels lors de la fusion de deux groupes
+        if (pixelInstance.length > 0) {
+            // Ajouter les pixels depuis pixelInstance
+            for (let i = 0; i < pixelInstance.length; i++) {
+                const pixel = me.pool.pull(
+                    "pixel",
+                    pixelInstance[i].localX,
+                    pixelInstance[i].localY,
+                    this.pixelMoveRadius
+                );
+                this.addChild(pixel);
+            }
+        } else {
+            // Générer des pixels aléatoires si pixelInstance est vide
+            for (let i = 0; i < this.pixelCount; i++) {
+                const offsetX = Math.random() * 50 - 25;
+                const offsetY = Math.random() * 50 - 25;
+                const pixel = me.pool.pull("pixel", offsetX, offsetY);
+                this.addChild(pixel);
+            }
         }
 
         this.body.gravityScale = 0;
@@ -47,6 +53,12 @@ class PixelGroup extends me.Container {
             "pointermove",
             me.game.viewport,
             (event) => {
+                // Vérifiez si `this` est une instance valide de PixelGroup
+                if (!(this instanceof PixelGroup)) {
+                    console.warn("Pointer event triggered on an invalid object.");
+                    return;
+                }
+        
                 const bounds = this.getBoundsPixel();
                 const x = event.gameWorldX;
                 const y = event.gameWorldY;
@@ -64,20 +76,6 @@ class PixelGroup extends me.Container {
                 }
             }
         );
-
-        this._mouseMoveHandler = (event) => {
-            const bounds = this.getBoundsPixel();
-            const x = event.gameWorldX;
-            const y = event.gameWorldY;
-        
-            this.hovered =
-                x >= bounds.minX &&
-                x <= bounds.maxX &&
-                y >= bounds.minY &&
-                y <= bounds.maxY;
-        };
-        
-        me.input.registerPointerEvent("pointermove", me.game.viewport, this._mouseMoveHandler);
         
     }
 
@@ -168,7 +166,7 @@ class PixelGroup extends me.Container {
             const dy = this.pos.y - this.spawnY;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance > 50) {
+            if (distance > 100) {
                 this.body.vel.x = 0;
                 this.body.vel.y = 0;
                 this.initialMovementConstrained = false;
@@ -224,7 +222,7 @@ class PixelGroup extends me.Container {
                  this.body.vel.y === 0 &&
                  other.body.vel.x === 0 &&
                  other.body.vel.y === 0 &&
-                 this.children.length === other.children.length
+                 this.pixelCount + other.pixelCount <= this.maxCount
                  ) {
                  // on fusionne en créant un nouveau groupe
                  this.mergeIntoNewGroup(this, other);
@@ -276,9 +274,8 @@ class PixelGroup extends me.Container {
                 }
             });
         });
-        console.log("All pixels transferred to new group:", allPixels);
         if (allPixels.length === 0) {
-            console.warn("No valid pixels found for merging.");
+            console.log("No valid pixels found for merging.");
             return null;
         }
     
@@ -299,10 +296,14 @@ class PixelGroup extends me.Container {
         const newGroup = new PixelGroup(
             centroid.x,
             centroid.y,
-            0,
+            allPixels.length,
             padding,
-            allPixels
+            allPixels.map((p) => ({
+                localX: p.localX,
+                localY: p.localY,
+            }))
         );
+        console.log("New group created:", newGroup);
     
         // 4) Ajouter le nouveau groupe et supprimer les anciens
         const world = me.game.world;
@@ -317,21 +318,6 @@ class PixelGroup extends me.Container {
         return newGroup;
     }
 
-    onDestroyEvent() {
-        this.children.slice().forEach((child) => {
-            if (child && child.destroy) {
-                child.destroy();
-            }
-            this.removeChild(child);
-        });
-    
-        if (this._mouseMoveHandler) {
-            me.input.releasePointerEvent("pointermove", me.game.viewport, this._mouseMoveHandler);
-            this._mouseMoveHandler = null;
-        }
-    }
-    
-
     getBoundsPixel() {
         // 1) on récupère les points mondiaux de tous les pixels
         const pts = this.children
@@ -340,15 +326,6 @@ class PixelGroup extends me.Container {
             x: this.pos.x + c.pos.x,
             y: this.pos.y + c.pos.y,
         }));
-        if (pts.length === 0) {
-            // fallback : rien à dessiner
-            return {
-                minX: this.pos.x,
-                minY: this.pos.y,
-                maxX: this.pos.x,
-                maxY: this.pos.y,
-            };
-        }
 
         // 2) on calcule le hull (monotone chain)
         const hull = this._convexHull(pts);
