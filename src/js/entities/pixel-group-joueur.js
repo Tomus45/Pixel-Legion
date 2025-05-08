@@ -15,7 +15,8 @@ class PixelGroupJoueur extends me.Container {
 
         this.body = new me.Body(this);
 
-        this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length);
+        this.pixelMoveRadius =
+            10 * Math.sqrt(this.pixelCount || pixelInstance.length);
 
         for (let i = 0; i < pixelInstance.length; i++) {
             const pixel = me.pool.pull(
@@ -46,7 +47,7 @@ class PixelGroupJoueur extends me.Container {
                 const bounds = this.getBoundsPixel();
                 const x = event.gameWorldX;
                 const y = event.gameWorldY;
-        
+
                 // Vérifiez si la souris est dans les limites du pixel group
                 if (
                     x >= bounds.minX &&
@@ -65,7 +66,9 @@ class PixelGroupJoueur extends me.Container {
     // Function to calculate convex hull
     _convexHull(pts) {
         if (pts.length <= 1) return pts.slice();
-        const pts2 = pts.slice().sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+        const pts2 = pts
+            .slice()
+            .sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
         const cross = (o, a, b) =>
             (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
         const lower = [];
@@ -96,7 +99,6 @@ class PixelGroupJoueur extends me.Container {
 
     // Draw the pixel group with optional expanded hull visualization
     draw(renderer) {
-
         if (this.hovered === true && this.selected === false) {
             renderer.setGlobalAlpha(0.5);
             renderer.setColor("#ffffff");
@@ -109,10 +111,9 @@ class PixelGroupJoueur extends me.Container {
             }
             renderer.closePath();
             renderer.fill();
-    
         } else if (this.selected === true) {
             renderer.save();
-    
+
             renderer.setGlobalAlpha(0.5);
             renderer.setColor("#FFF");
 
@@ -138,7 +139,7 @@ class PixelGroupJoueur extends me.Container {
             renderer.stroke();
             renderer.restore();
         }
-    
+
         super.draw(renderer);
     }
 
@@ -147,7 +148,6 @@ class PixelGroupJoueur extends me.Container {
     }
 
     update(dt) {
-
         // Si un propriétaire est défini, synchroniser la position avec lui
         if (this.owner) {
             this.pos.x = this.owner.pos.x;
@@ -162,29 +162,29 @@ class PixelGroupJoueur extends me.Container {
         });
 
         // Handle selection of pixels
-            const pts = this.children.map((c) => ({
-                x: this.pos.x + c.pos.x,
-                y: this.pos.y + c.pos.y,
-            }));
+        const pts = this.children.map((c) => ({
+            x: this.pos.x + c.pos.x,
+            y: this.pos.y + c.pos.y,
+        }));
 
-            const hull = this._convexHull(pts);
-            const centroid = hull.reduce(
-                (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
-                { x: 0, y: 0 }
-            );
-            centroid.x /= hull.length;
-            centroid.y /= hull.length;
+        const hull = this._convexHull(pts);
+        const centroid = hull.reduce(
+            (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
+            { x: 0, y: 0 }
+        );
+        centroid.x /= hull.length;
+        centroid.y /= hull.length;
 
-            // Expand the convex hull for visual effect
-            this._expandedHull = hull.map((p) => {
-                const dxp = p.x - centroid.x;
-                const dyp = p.y - centroid.y;
-                const dist = Math.hypot(dxp, dyp) || 1;
-                return {
-                    x: Math.round(p.x + (dxp / dist) * this.padding),
-                    y: Math.round(p.y + (dyp / dist) * this.padding),
-                };
-            });
+        // Expand the convex hull for visual effect
+        this._expandedHull = hull.map((p) => {
+            const dxp = p.x - centroid.x;
+            const dyp = p.y - centroid.y;
+            const dist = Math.hypot(dxp, dyp) || 1;
+            return {
+                x: Math.round(p.x + (dxp / dist) * this.padding),
+                y: Math.round(p.y + (dyp / dist) * this.padding),
+            };
+        });
 
         // Désactiver la logique de déplacement indépendante
         this.body.vel.set(0, 0);
