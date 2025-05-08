@@ -1,7 +1,7 @@
 import * as me from "melonjs";
 
 class PixelGroup extends me.Container {
-    constructor(x, y, pixelCount = 10, padding = 32, pixelInstance = []) {
+    constructor(x, y, pixelCount = 10, padding = 20, pixelInstance = []) {
         super(x, y, {
             width: 8,
             height: 8,
@@ -19,7 +19,9 @@ class PixelGroup extends me.Container {
         this.body = new me.Body(this);
         this.body.setMaxVelocity(3, 3);
 
-        this.pixelMoveRadius = 10 * Math.sqrt(this.pixelCount || pixelInstance.length); 
+        this.pixelMoveRadius = 3 * Math.sqrt(this.pixelCount || pixelInstance.length);
+        this.maxPixelMoveRadius = 30; // Maximum move radius for pixels
+        this.pixelMoveRadius = Math.min(this.pixelMoveRadius, this.maxPixelMoveRadius); // Limit the move radius to a maximum value
 
         // Créer les pixels lors de la fusion de deux groupes
         if (pixelInstance.length > 0) {
@@ -172,6 +174,7 @@ class PixelGroup extends me.Container {
                 this.initialMovementConstrained = false;
             }
         }
+        
 
         // Update each pixel in the group
         this.children.forEach((child) => {
@@ -182,29 +185,29 @@ class PixelGroup extends me.Container {
 
         // Handle selection of pixels
 
-            const pts = this.children.map((c) => ({
-                x: this.pos.x + c.pos.x,
-                y: this.pos.y + c.pos.y,
-            }));
+        const pts = this.children.map((c) => ({
+            x: this.pos.x + c.pos.x,
+            y: this.pos.y + c.pos.y,
+        }));
 
-            const hull = this._convexHull(pts);
-            const centroid = hull.reduce(
-                (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
-                { x: 0, y: 0 }
-            );
-            centroid.x /= hull.length;
-            centroid.y /= hull.length;
+        const hull = this._convexHull(pts);
+        const centroid = hull.reduce(
+            (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
+            { x: 0, y: 0 }
+        );
+        centroid.x /= hull.length;
+        centroid.y /= hull.length;
 
-            // Expand the convex hull for visual effect
-            this._expandedHull = hull.map((p) => {
-                const dxp = p.x - centroid.x;
-                const dyp = p.y - centroid.y;
-                const dist = Math.hypot(dxp, dyp) || 1;
-                return {
-                    x: Math.round(p.x + (dxp / dist) * this.padding),
-                    y: Math.round(p.y + (dyp / dist) * this.padding),
-                };
-            });
+        // Expand the convex hull for visual effect
+        this._expandedHull = hull.map((p) => {
+            const dxp = p.x - centroid.x;
+            const dyp = p.y - centroid.y;
+            const dist = Math.hypot(dxp, dyp) || 1;
+            return {
+                x: Math.round(p.x + (dxp / dist) * this.padding),
+                y: Math.round(p.y + (dyp / dist) * this.padding),
+            };
+        });
 
          // détection de fusion
          const seuilFusion = 50; // en pixels, à ajuster
@@ -303,7 +306,6 @@ class PixelGroup extends me.Container {
                 localY: p.localY,
             }))
         );
-        console.log("New group created:", newGroup);
     
         // 4) Ajouter le nouveau groupe et supprimer les anciens
         const world = me.game.world;

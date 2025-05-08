@@ -28,7 +28,7 @@ export default function onload() {
     if (
         !me.video.init(1920, 1080, {
             parent: "screen",
-            scaleMethod: "fit", // ou "flex-width", selon le comportement souhaité
+            scaleMethod: "flex-width",
             renderer: me.video.CANVAS,
             antialias: false,           // ← désactive l’anticrénelage
             subPixel: false,

@@ -2,7 +2,7 @@
 import * as me from "melonjs";
 
 class Pixel extends me.Entity {
-    constructor(x, y, moveRadius = 20) {
+    constructor(x, y, moveRadius = 10) {
         super(x, y, {
             width: 10,
             height: 10,
