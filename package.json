@@ -6,7 +6,7 @@
   "author": "Olivier Biot",
   "license": "MIT",
   "devDependencies": {
-    "vite": "^5.2.8",
+    "vite": "^6.3.5",
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-html": "^3.2.2",
     "vite-plugin-static-copy": "^1.0.2",
