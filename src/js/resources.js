@@ -40,7 +40,18 @@ const resources = [
         name: "PressStart2P",
         type: "binary",
         src: "./data/fnt/PressStart2P.fnt"
-    }
+    },
+    {
+        name: "24Outline",
+        type: "image",
+        src: "./data/fnt/24Outline.png"
+    },
+    {
+        name: "24Outline",
+        type: "binary",
+        src: "./data/fnt/24Outline.fnt"
+    },
+
 ];
 
 export default resources;

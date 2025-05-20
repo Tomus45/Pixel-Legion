@@ -14,14 +14,13 @@ import {
 
 import "../index.css";
 
-import TitleScreen from "./screens/title.js";
 import PlayScreen from "./screens/play.js";
 import PlayerUnit from "./entities/player.js";
 import Pixel from "./entities/pixel.js";
 import PixelGroup from "./entities/pixel-group";
 import PixelGroupJoueur from "./entities/pixel-group-joueur.js";
 import resources from "./resources.js";
-import MenuScreen from "./screens/menu.js";
+import MenuScreen from "./screens/menu/title-screen.js";
 
 export default function onload() {
     // initialize the display canvas once the device/browser is ready
@@ -68,11 +67,12 @@ export default function onload() {
 
     // set and load all resources.
     me.loader.preload(resources, function () {
-        // game.texture = new me.TextureAtlas([
-        //     me.loader.getJSON("UI_Assets-0"),
-        //     me.loader.getJSON("UI_Assets-1"),
-        //     me.loader.getJSON("UI_Assets-2")
-        // ]);
+        game.texture = new me.TextureAtlas([
+            me.loader.getJSON("UI_Assets-0"),
+            me.loader.getJSON("UI_Assets-1"),
+            me.loader.getJSON("UI_Assets-2")
+        ]);
+
         // set the user defined game stages
         me.state.set(me.state.MENU, new MenuScreen());
         me.state.set(me.state.PLAY, new PlayScreen());
@@ -86,5 +86,6 @@ export default function onload() {
         // me.state.change(me.state.MENU);
         // Start the game.
         me.state.change(me.state.PLAY);
+        // me.state.change(me.state.MENU);
     });
 }
