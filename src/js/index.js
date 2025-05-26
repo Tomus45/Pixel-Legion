@@ -16,7 +16,6 @@ import "../index.css";
 
 import PlayScreen from "./screens/play.js";
 import PlayerUnit from "./entities/player.js";
-import Pixel from "./entities/pixel.js";
 import PixelGroup from "./entities/pixel-group";
 import PixelGroupJoueur from "./entities/pixel-group-joueur.js";
 import EnemyUnit from "./entities/enemy.js";
@@ -80,7 +79,6 @@ export default function onload() {
 
         // add our player entity in the entity pool
         me.pool.register("mainPlayer", PlayerUnit);
-        me.pool.register("pixel", Pixel);
         me.pool.register("pixelGroup", PixelGroup);
         me.pool.register("pixelGroupJoueur", PixelGroupJoueur); // Register the pixel group entity
         // Register the EnemyUnit pool with the key matching the entity type
