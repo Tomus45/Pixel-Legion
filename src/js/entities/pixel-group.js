@@ -2,12 +2,13 @@ import * as me from "melonjs";
 import BasePixelGroup from "./base-pixel-group.js";
 import { getPooledPixel, releasePixels } from "../util/pixel-pool.js";
 
-class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, padding = 20, pixelInstance = [], ownerId = null) {
+class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, padding = 20, pixelInstance = [], ownerId = null, color = "#000000") {
         super(x, y, {
             pixelCount,
             padding,
             ownerId,
-            type: "pixelGroup"
+            type: "pixelGroup",
+            color
         });
         
         // Configuration spécifique à PixelGroup
@@ -16,6 +17,7 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
         this.maxCount = 100;
         this.initialMovementConstrained = true;
         this._alreadyMerged = false;
+        this.color = color;
         
         // Configuration du corps physique
         this.body.setMaxVelocity(3, 3);
@@ -59,7 +61,7 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
             for (let i = 0; i < this.pixelCount; i++) {
                 const offsetX = Math.random() * 50 - 25;
                 const offsetY = Math.random() * 50 - 25;
-                const px = getPooledPixel(offsetX, offsetY, this.pixelMoveRadius);
+                const px = getPooledPixel(offsetX, offsetY, this.pixelMoveRadius, this.color);
                 pixels.push(px);
             }
         }

@@ -22,9 +22,10 @@ class PlayerUnit extends me.Entity {
         this.type = "player";
         this.selectable = true;
         this.selected = false;
-        this.team = "red";
-        this.ownerId = settings?.ownerId ?? 0;
-        
+        this.team = "green";
+        this.ownerId = settings?.ownerId ?? crypto.randomUUID();
+        this.color = settings?.color || "#00ff00";
+
         // Selection and dragging
         this.selectedEntity = null;
         this.isDragging = false;
@@ -59,7 +60,8 @@ class PlayerUnit extends me.Entity {
             10,
             32,
             [],
-            this.ownerId
+            this.ownerId,
+            this.color
         );
         this.auraPixelGroup.setOwner(this);
         me.game.world.addChild(this.auraPixelGroup, this.z);
@@ -252,7 +254,8 @@ class PlayerUnit extends me.Entity {
             10,
             undefined,
             [],
-            this.ownerId
+            this.ownerId,
+            this.color
         );
         
         // Set random velocity

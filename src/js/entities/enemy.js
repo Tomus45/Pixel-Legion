@@ -1,7 +1,4 @@
 import * as me from "melonjs";
-import PixelGroup from "./pixel-group.js";
-import PixelGroupJoueur from "./pixel-group-joueur.js";
-import game from "../game.js";
 import { handleEnemyBehavior } from "./enemy_behavior.js";
 
 class EnemyUnit extends me.Entity {
@@ -12,6 +9,7 @@ class EnemyUnit extends me.Entity {
         this.selectable = false; // Les ennemis ne sont pas sélectionnables
 
         this.team = "blue"; // Équipe de l'ennemi
+        this.color = settings.color || "#0000ff"; // Couleur par défaut de l'ennemi
 
         // set a "player object" type
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
@@ -181,7 +179,8 @@ class EnemyUnit extends me.Entity {
                 10,
                 undefined,
                 [],
-                this.ownerId // Passe l'ownerId au groupe généré
+                this.ownerId,
+                this.color
             );
             pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;
             pixelGroup.body.vel.y = Math.random() < 0.5 ? -2 : 2;

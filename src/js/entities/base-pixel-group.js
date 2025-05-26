@@ -16,6 +16,7 @@ class BasePixelGroup extends me.Container {
         this.hovered = false;
         this.type = settings.type || "pixelGroup";
         this.ownerId = settings.ownerId || null;
+        this.color = settings.color || "#ffffff";
         
         // Corps physique commun
         this.body = new me.Body(this);
@@ -141,8 +142,8 @@ class BasePixelGroup extends me.Container {
 
         const colors = {
             hover: "#ffffff",
-            selected: "#ff0000",
-            selectedFill: "#ff0000"
+            selected: this.color,
+            selectedFill: this.color
         };
 
         if (this.hovered && !this.selected) {
