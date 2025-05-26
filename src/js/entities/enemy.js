@@ -1,17 +1,17 @@
 import * as me from "melonjs";
 import PixelGroup from "./pixel-group.js";
 import PixelGroupJoueur from "./pixel-group-joueur.js";
-import game from "./../game.js";
+import game from "../game.js";
+import { handleEnemyBehavior } from "./enemy_behavior.js";
 
-class PlayerUnit extends me.Entity {
+class EnemyUnit extends me.Entity {
     constructor(x, y, settings) {
         super(x, y, settings);
 
-        this.type = "player";
-        this.selectable = true;
-        this.selected = false;
+        this.type = "enemy";
+        this.selectable = false; // Les ennemis ne sont pas sélectionnables
 
-        this.team = "red";
+        this.team = "blue"; // Équipe de l'ennemi
 
         // set a "player object" type
         this.body.collisionType = me.collision.types.PLAYER_OBJECT;
@@ -21,6 +21,7 @@ class PlayerUnit extends me.Entity {
 
         this.startX = this.pos.x; // Position initiale en X
         this.startY = this.pos.y; // Position initiale en Y
+
         this.isBouncing = false; // Indique si le joueur est en train de rebondir
         this.bounceRadius = 1; // Rayon du rebond
         this.bounceSpeed = 4; // Vitesse du rebond
@@ -28,9 +29,9 @@ class PlayerUnit extends me.Entity {
         this.bounceDecay = 0.98; // Facteur de réduction du rayon à chaque mise à jour (entre 0 et 1)
 
         this.pixelTimer = 0; // Temps écoulé
-        this.pixelInterval = 2000; // Générer un group de pixels toutes les 2000 ms
+        this.pixelInterval = 5000; // Générer un group de pixels toutes les 2000 ms
 
-        this.ownerId = settings && settings.ownerId !== undefined ? settings.ownerId : 0; // 0 par défaut
+        this.ownerId = settings && settings.ownerId !== undefined ? settings.ownerId : 1; // 1 par défaut pour les ennemis
 
         // Créer la barre de vie (auraPixelGroup) et la lier au joueur
         this.auraPixelGroup = me.pool.pull(
@@ -45,11 +46,14 @@ class PlayerUnit extends me.Entity {
         this.auraPixelGroup.setOwner(this); // On lie le groupe de pixels au joueur
         me.game.world.addChild(this.auraPixelGroup, this.z);
 
+        // Change color by applying a tint to the sprite
         this.renderable = new me.Sprite(0, 0, {
             image: me.loader.getImage("character"),
             framewidth: 32,
             frameheight: 32,
         });
+        // Apply a red tint (change the color as needed)
+        this.renderable.tint.setColor(255, 0, 0);
 
         this.renderable.addAnimation("stand", [0], 100);
         this.renderable.setCurrentAnimation("stand");
@@ -115,77 +119,11 @@ class PlayerUnit extends me.Entity {
                 }
             }
         );
-
-        me.input.registerPointerEvent(
-            "pointerdown",
-            me.game.viewport,
-            (event) => {
-                if (event.button === 0) {
-                    // Si le bouton gauche de la souris est pressé
-                    const x = event.gameWorldX;
-                    const y = event.gameWorldY;
-
-                    // Vérifier si un PixelGroup a été sélectionné
-                    const candidates = me.game.world.getChildByProp(
-                        "selectable",
-                        true
-                    );
-                    // on cherche celui dont la box contient le clic
-                    const clicked = candidates.find((entity) => {
-                        const b = entity.getBoundsPixel();
-                        return (
-                            x >= b.minX &&
-                            x <= b.maxX &&
-                            y >= b.minY &&
-                            y <= b.maxY
-                        );
-                    });
-
-                    if (clicked) {
-                        // Si un PixelGroup est sélectionné
-                        candidates.forEach((entity) => {
-                            entity.unselect(); // Désélectionner les autres entités
-                        });
-                        clicked.select(); // Sélectionner l'entité
-                        this.selectedEntity = clicked; // Définir la sélection
-
-                        this.isDragging = true; // Activer le déplacement
-                    } else {
-                        // Si aucun PixelGroup n'est sélectionné, désélectionner le joueur et arrêter le déplacement
-                        if (this.selectedEntity) {
-                            console.log("selectedEntity", this.selectedEntity);
-                            if (
-                                this.selectedEntity.type !== "player" &&
-                                this.selectedEntity.type !== "auraPixelGroup"
-                            ) {
-                                this.selectedEntity.targetPos = {
-                                    x: event.gameWorldX,
-                                    y: event.gameWorldY,
-                                };
-                            } else {
-                                this.targetPos = {
-                                    x: event.gameWorldX,
-                                    y: event.gameWorldY,
-                                };
-                            }
-                        }
-                    }
-                } else if (event.button === 2) {
-                    // Si le bouton droit de la souris est pressé
-                    const candidates = me.game.world.getChildByProp(
-                        "selectable",
-                        true
-                    );
-                    candidates.forEach((entity) => {
-                        entity.unselect(); // Désélectionner toutes les entités
-                    });
-                    this.selectedEntity = null; // Réinitialiser la sélection
-                }
-            }
-        );
     }
 
     update(dt) {
+        // apply AI behavior: set this.targetPos based on player chase or patrol
+        handleEnemyBehavior(this, dt);
         if (this.targetPos) {
             const dx = this.targetPos.x - this.pos.x;
             const dy = this.targetPos.y - this.pos.y;
@@ -247,6 +185,7 @@ class PlayerUnit extends me.Entity {
             );
             pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;
             pixelGroup.body.vel.y = Math.random() < 0.5 ? -2 : 2;
+            pixelGroup.team = this.team;
             me.game.world.addChild(pixelGroup, 1);
         }
 
@@ -263,4 +202,4 @@ class PlayerUnit extends me.Entity {
     }
 }
 
-export default PlayerUnit;
+export default EnemyUnit;

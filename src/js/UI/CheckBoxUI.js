@@ -1,5 +1,5 @@
 import * as me from 'melonjs';
-import game from "./../index.js";
+import game from "../index.js";
 
 /**
  * a basic checkbox control

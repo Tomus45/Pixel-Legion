@@ -1,10 +1,8 @@
 import * as me from 'melonjs';
-import PlayerUnit from './../entities/player.js';
-
 
 class PlayScreen extends me.Stage {
     /**
-     *  action to perform on state change
+     * Action à effectuer lors du changement d'état
      */
     onResetEvent() {
         // load a level

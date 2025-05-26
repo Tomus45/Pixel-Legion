@@ -1,8 +1,8 @@
 import * as me from "melonjs";
 import game from "../../index.js";
-import UIContainer from "../../entities/UIContainer.js";
-import { CheckBoxUI } from "../../entities/CheckBoxUI.js";
-import { ButtonUI } from "../../entities/ButtonUI.js";
+import UIContainer from "../../UI/UIContainer.js";
+import { CheckBoxUI } from "../../UI/CheckBoxUI.js";
+import { ButtonUI } from "../../UI/ButtonUI.js";
 import TitleMenu from "./title-menu.js";
 
 class TitleScreen extends me.Stage {

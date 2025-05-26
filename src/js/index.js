@@ -19,6 +19,7 @@ import PlayerUnit from "./entities/player.js";
 import Pixel from "./entities/pixel.js";
 import PixelGroup from "./entities/pixel-group";
 import PixelGroupJoueur from "./entities/pixel-group-joueur.js";
+import EnemyUnit from "./entities/enemy.js";
 import resources from "./resources.js";
 import MenuScreen from "./screens/menu/title-screen.js";
 
@@ -82,7 +83,9 @@ export default function onload() {
         me.pool.register("pixel", Pixel);
         me.pool.register("pixelGroup", PixelGroup);
         me.pool.register("pixelGroupJoueur", PixelGroupJoueur); // Register the pixel group entity
-
+        // Register the EnemyUnit pool with the key matching the entity type
+        me.pool.register("enemy", EnemyUnit);
+        
         // me.state.change(me.state.MENU);
         // Start the game.
         me.state.change(me.state.PLAY);
