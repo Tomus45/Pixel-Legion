@@ -17,13 +17,12 @@ class PlayerUnit extends me.Entity {
         this.setupInputHandlers();
     }
 
-    initializeProperties(settings) {
-        // Basic properties
+    initializeProperties(settings) {        // Basic properties
         this.type = "player";
         this.selectable = true;
         this.selected = false;
         this.team = "green";
-        this.ownerId = settings?.ownerId ?? crypto.randomUUID();
+        this.ownerId = settings?.ownerId ?? 0; // 0 pour l'équipe verte (joueur)
         this.color = settings?.color || "#00ff00";
 
         // Selection and dragging
@@ -261,6 +260,9 @@ class PlayerUnit extends me.Entity {
         // Set random velocity
         pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;
         pixelGroup.body.vel.y = Math.random() < 0.5 ? -2 : 2;
+        
+        // Assigner explicitement l'équipe
+        pixelGroup.team = this.team;
         
         me.game.world.addChild(pixelGroup, 1);
     }

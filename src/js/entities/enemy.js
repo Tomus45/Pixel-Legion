@@ -31,6 +31,8 @@ class EnemyUnit extends me.Entity {
 
         this.ownerId = settings && settings.ownerId !== undefined ? settings.ownerId : 1; // 1 par défaut pour les ennemis
 
+        this.pixelGroup = []; // Tableau pour stocker les groupes de pixels
+
         // Créer la barre de vie (auraPixelGroup) et la lier au joueur
         this.auraPixelGroup = me.pool.pull(
             "pixelGroupJoueur",
@@ -164,7 +166,14 @@ class EnemyUnit extends me.Entity {
         }
 
         // Synchroniser auraPixelGroup avec la position du joueur
-        this.auraPixelGroup.pos.set(this.pos.x, this.pos.y);
+        if (this.auraPixelGroup.pos && this.auraPixelGroup.pixels.length > 0) {
+            this.auraPixelGroup.pos.set(this.pos.x, this.pos.y);
+        } else if (this.auraPixelGroup.pixels.length === 0) {
+            for (const pixelGroup of this.pixelGroup) {
+                me.game.world.removeChild(pixelGroup);
+            }
+            me.game.world.removeChild(this);
+        }
 
         this.pixelTimer += dt;
         // Génération des pixels volants
@@ -185,6 +194,7 @@ class EnemyUnit extends me.Entity {
             pixelGroup.body.vel.x = Math.random() < 0.5 ? -2 : 2;
             pixelGroup.body.vel.y = Math.random() < 0.5 ? -2 : 2;
             pixelGroup.team = this.team;
+            this.pixelGroup.push(pixelGroup);
             me.game.world.addChild(pixelGroup, 1);
         }
 

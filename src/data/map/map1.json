@@ -54,52 +54,6 @@
                             "value": 100
                         }
                     ]
-                },
-                {
-                    "height": 32,
-                    "id": 47,
-                    "name": "enemy",
-                    "rotation": 0,
-                    "type": "enemy",
-                    "visible": true,
-                    "width": 32,
-                    "x": 600,
-                    "y": 400,
-                    "properties": [
-                        {
-                            "name": "chaseRadius",
-                            "type": "int",
-                            "value": 250
-                        },
-                        {
-                            "name": "patrolRange",
-                            "type": "int",
-                            "value": 120
-                        }
-                    ]
-                },
-                {
-                    "height": 32,
-                    "id": 48,
-                    "name": "enemy",
-                    "rotation": 0,
-                    "type": "enemy",
-                    "visible": true,
-                    "width": 32,
-                    "x": 900,
-                    "y": 600,
-                    "properties": [
-                        {
-                            "name": "chaseRadius",
-                            "type": "int",
-                            "value": 180
-                        },
-                        {
-                            "name": "patrolRange",
-                            "type": "int",
-                            "value": 90
-                        }
-                    ]
                 }
             ],
             "opacity": 1,

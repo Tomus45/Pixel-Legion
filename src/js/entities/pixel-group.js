@@ -19,6 +19,16 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
         this._alreadyMerged = false;
         this.color = color;
         
+        // Propriétés de combat
+        this.team = this._determineTeam(ownerId);
+        this.attackRange = 80; // Distance d'attaque
+        this.attackCooldown = 1000; // Cooldown entre attaques en ms
+        this.lastAttackTime = 0;
+        this.attackDamage = 1; // Nombre de pixels perdus par attaque
+        this.isInCombat = false;
+        this.combatTargets = []; // Liste des ennemis à portée
+        this.projectiles = []; // Projectiles visuels
+        
         // Configuration du corps physique
         this.body.setMaxVelocity(3, 3);
         
@@ -27,6 +37,16 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
         
         // Initialisation des pixels
         this.pixels = this._initializePixels(pixelInstance);
+    }
+
+    /**
+     * Détermine l'équipe basée sur l'ownerId
+     */
+    _determineTeam(ownerId) {
+        // Convention : ownerId 0 = équipe verte (joueur), ownerId 1 = équipe rouge (ennemi)
+        if (ownerId === null || ownerId === 0) return "green";
+        if (ownerId === 1) return "red";
+        return "neutral";
     }
 
     /**
@@ -85,6 +105,8 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
         this._updateHull();
         this._handleMerging();
         this._handleTargetMovement();
+        this._handleCombat(dt);
+        this._updateProjectiles(dt);
         
         return super.update(dt);
     }
@@ -145,9 +167,7 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
                 break;
             }
         }
-    }
-
-    /**
+    }    /**
      * Vérifie si le groupe peut fusionner avec un autre
      */
     _canMergeWith(other, threshold) {
@@ -156,7 +176,8 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
                this.body.vel.x === 0 && this.body.vel.y === 0 &&
                other.body.vel.x === 0 && other.body.vel.y === 0 &&
                this.pixelCount + other.pixelCount <= this.maxCount &&
-               this.ownerId === other.ownerId;
+               this.ownerId === other.ownerId &&
+               this.team === other.team; // Même équipe pour fusionner
     }
 
     /**
@@ -177,12 +198,127 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
             this.body.vel.set(0, 0);
             this.targetPos = null;
         }
+    }
+
+    /**
+     * Gère le système de combat
+     */
+    _handleCombat(dt) {
+        // Trouver les ennemis à portée
+        this._findEnemiesInRange();
+        
+        // Attaquer si possible
+        if (this.combatTargets.length > 0) {
+            this.isInCombat = true;
+            this._performAttacks(dt);
+        } else {
+            this.isInCombat = false;
+        }
+    }    /**
+     * Trouve les ennemis dans la portée d'attaque
+     */
+    _findEnemiesInRange() {
+        this.combatTargets = [];
+        
+        // Inclure les PixelGroup et les PixelGroupJoueur
+        const allTargets = me.game.world.children
+            .filter(obj => (obj.constructor.name === "PixelGroup" || obj.constructor.name === "PixelGroupJoueur") && obj !== this);
+
+        for (let other of allTargets) {
+            // Vérifier si c'est un ennemi
+            if (other.team !== this.team && other.team !== "neutral") {
+                const distance = Math.hypot(
+                    this.pos.x - other.pos.x,
+                    this.pos.y - other.pos.y
+                );
+                
+                if (distance <= this.attackRange) {
+                    this.combatTargets.push(other);
+                }
+            }
+        }
+    }
+
+    /**
+     * Effectue les attaques sur les cibles
+     */
+    _performAttacks(dt) {
+        const currentTime = Date.now();
+        
+        if (currentTime - this.lastAttackTime >= this.attackCooldown) {
+            // Attaquer toutes les cibles à portée
+            for (let target of this.combatTargets) {
+                this._attackTarget(target);
+                this._createProjectile(target);
+            }
+            
+            this.lastAttackTime = currentTime;
+        }
+    }
+
+    /**
+     * Attaque une cible spécifique
+     */
+    _attackTarget(target) {
+        if (target.pixels.length > 0) {
+            // Réduire le nombre de pixels de la cible
+            for (let i = 0; i < this.attackDamage && target.pixels.length > 0; i++) {
+                const removedPixel = target.pixels.pop();
+                releasePixels([removedPixel]);
+            }
+            
+            // Mettre à jour le pixelCount
+            target.pixelCount = target.pixels.length;
+            
+            // Détruire le groupe si plus de pixels
+            if (target.pixels.length === 0) {
+                me.game.world.removeChild(target);
+            }
+        }
+    }
+
+    /**
+     * Crée un projectile visuel vers la cible
+     */
+    _createProjectile(target) {
+        const projectile = {
+            startX: this.pos.x,
+            startY: this.pos.y,
+            endX: target.pos.x,
+            endY: target.pos.y,
+            progress: 0,
+            speed: 3.0, // Vitesse du projectile (0 à 1 par seconde)
+            color: this.color,
+            active: true
+        };
+        
+        this.projectiles.push(projectile);
+    }
+
+    /**
+     * Met à jour les projectiles visuels
+     */
+    _updateProjectiles(dt) {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const proj = this.projectiles[i];
+            
+            if (proj.active) {
+                proj.progress += (proj.speed * dt) / 1000;
+                
+                if (proj.progress >= 1.0) {
+                    proj.active = false;
+                    this.projectiles.splice(i, 1);
+                }
+            }
+        }
     }    /**
      * Dessine le groupe de pixels
      */
     draw(renderer) {
         this._drawPixels(renderer);
         this._drawHull(renderer);
+        this._drawProjectiles(renderer);
+        this._drawCombatIndicator(renderer);
         super.draw(renderer);
     }
 
@@ -196,7 +332,68 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
             renderer.fillRect(this.pos.x + px.x, this.pos.y + px.y, 8, 8);
         }
         renderer.restore();
-    }    /**
+    }
+
+    /**
+     * Dessine les projectiles de combat
+     */
+    _drawProjectiles(renderer) {
+        if (this.projectiles.length === 0) return;
+        
+        renderer.save();
+        renderer.lineWidth = 2;
+        
+        for (let proj of this.projectiles) {
+            if (proj.active) {
+                // Calculer la position actuelle du projectile
+                const currentX = proj.startX + (proj.endX - proj.startX) * proj.progress;
+                const currentY = proj.startY + (proj.endY - proj.startY) * proj.progress;
+                
+                // Dessiner une ligne de tir avec un effet de fade
+                const alpha = 1.0 - proj.progress; // Fade out au fil du temps
+                renderer.setGlobalAlpha(alpha);
+                renderer.setColor(proj.color);
+                
+                // Ligne de tir
+                renderer.beginPath();
+                renderer.moveTo(proj.startX, proj.startY);
+                renderer.lineTo(currentX, currentY);
+                renderer.stroke();
+                
+                // Point de projectile
+                renderer.fillRect(currentX - 2, currentY - 2, 4, 4);
+            }
+        }
+        
+        renderer.restore();
+    }
+
+    /**
+     * Dessine l'indicateur de combat
+     */
+    _drawCombatIndicator(renderer) {
+        if (!this.isInCombat) return;
+        
+        renderer.save();
+        
+        // Cercle rouge clignotant autour du groupe en combat
+        const time = Date.now();
+        const pulseAlpha = 0.3 + 0.4 * Math.sin((time % 1000) / 1000 * Math.PI * 2);
+        
+        renderer.setGlobalAlpha(pulseAlpha);
+        renderer.setColor("#ff0000");
+        renderer.lineWidth = 3;
+        
+        // Calculer le rayon basé sur la taille du groupe
+        const radius = Math.max(30, this.pixels.length * 2);
+        
+        renderer.beginPath();
+        renderer.stroke();
+        
+        renderer.restore();
+    }
+
+    /**
      * Fusionne deux groupes en un nouveau groupe
      */
     mergeIntoNewGroup(groupA, groupB) {
@@ -272,21 +469,25 @@ class PixelGroup extends BasePixelGroup {    constructor(x, y, pixelCount = 10, 
             color: p.color,
             moveRadius: p.moveRadius
         }));
-    }
-
-    /**
+    }    /**
      * Crée le nouveau groupe fusionné
      */
     _createMergedGroup(groupA, groupB, allPixels, centroid, newPixelInstances) {
         const padding = Math.max(groupA.padding, groupB.padding);
-        return new PixelGroup(
+        const newGroup = new PixelGroup(
             centroid.x,
             centroid.y,
             allPixels.length,
             padding,
             newPixelInstances,
-            groupA.ownerId
+            groupA.ownerId,
+            groupA.color
         );
+        
+        // Préserver l'équipe
+        newGroup.team = groupA.team;
+        
+        return newGroup;
     }
 
     /**
